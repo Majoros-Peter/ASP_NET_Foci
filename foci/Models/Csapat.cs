@@ -10,6 +10,6 @@
         public int Nyert { get; set; }
         public int Vesztett { get; set; }
         public int Dontetlen { get; set; }
-        public int Pontszam { get; set; }
+        public int Pontszam => Nyert * 3 + Dontetlen;
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using foci.Models;
 
 namespace foci.Pages
@@ -18,26 +18,43 @@ namespace foci.Pages
             _context = context;
         }
 
-        public IActionResult OnGet()
+        public IList<Meccs> Meccs { get;set; } = default!;
+        public List<Csapat> Stat { get; set; } = default!;
+
+        public async Task OnGetAsync()
         {
-            return Page();
-        }
+            Meccs = await _context.Meccsek.ToListAsync();
 
-        [BindProperty]
-        public Meccs Meccs { get; set; } = default!;
+            Stat = Meccs.Select(G => G.HazaiNev)
+                .Distinct()
+                .Select(G => new Csapat()
+                {
+                    CsapatNev = G,
+                    JatszottMerkozesekSzama = Meccs.Count(x => G == x.HazaiNev || G == x.VendegNev),
+                    Nyert = Meccs.Count(x => x.GyoztesCsapatNeve() == G),
+                    Dontetlen = Meccs.Count(x => x.GyoztesCsapatNeve() == ""),
+                    Vesztett = Meccs.Count(x => x.VesztesCsapatNeve() == G),
+                    LottGolok = Meccs.Where(x => x.HazaiNev == G).Sum(x => x.HazaiVeg) + Meccs.Where(x => x.VendegNev == G).Sum(x => x.VendegVeg),
+                    KapottGolok = Meccs.Where(x => x.HazaiNev == G).Sum(x => x.VendegVeg) + Meccs.Where(x => x.VendegNev == G).Sum(x => x.HazaiVeg)
+                })
+                .Union(
+                Meccs.Select(G => G.VendegNev)
+                .Distinct()
+                .Select(G => new Csapat()
+                {
+                    CsapatNev = G,
+                    JatszottMerkozesekSzama = Meccs.Count(x => G == x.HazaiNev || G == x.VendegNev),
+                    Nyert = Meccs.Count(x => x.GyoztesCsapatNeve() == G),
+                    Dontetlen = Meccs.Count(x => x.GyoztesCsapatNeve() == ""),
+                    Vesztett = Meccs.Count(x => x.VesztesCsapatNeve() == G),
+                    LottGolok = Meccs.Where(x => x.HazaiNev == G).Sum(x => x.HazaiVeg) + Meccs.Where(x => x.VendegNev == G).Sum(x => x.VendegVeg),
+                    KapottGolok = Meccs.Where(x => x.HazaiNev == G).Sum(x => x.VendegVeg) + Meccs.Where(x => x.VendegNev == G).Sum(x => x.HazaiVeg)
+                }))
+                .ToList();
 
-        // For more information, see https://aka.ms/RazorPagesCRUD.
-        public async Task<IActionResult> OnPostAsync()
-        {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
-
-            _context.Meccsek.Add(Meccs);
-            await _context.SaveChangesAsync();
-
-            return RedirectToPage("./Index");
+            Stat = Stat.OrderBy(G => G.Pontszam)
+                       .Select((G, i) => { G.Helyezes = i + 1; return G; })
+                       .ToList();
         }
     }
 }

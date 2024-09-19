@@ -11,6 +11,22 @@
         public string HazaiNev { get; set; }
         public string VendegNev { get; set; }
 
+        public string GyoztesCsapatNeve()
+        {
+            if(HazaiVeg > VendegVeg)
+                return HazaiNev;
+            if (HazaiVeg < VendegVeg)
+                return VendegNev;
+            return "";
+        }
 
+        public string VesztesCsapatNeve()
+        {
+            if (HazaiVeg < VendegVeg)
+                return HazaiNev;
+            if (HazaiVeg > VendegVeg)
+                return VendegNev;
+            return "";
+        }
     }
 }
